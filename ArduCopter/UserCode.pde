@@ -40,5 +40,6 @@ void userhook_SlowLoop()
 void userhook_SuperSlowLoop()
 {
     // put your 1Hz code here
+    g.air_sensor = g.air_sensor + 1;
 }
 #endif

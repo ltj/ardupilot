@@ -320,6 +320,9 @@ public:
         k_param_autotune_aggressiveness,  // 246
         k_param_pi_vel_xy,  // 247
 
+        // air sensors
+        k_param_air_sensor, // 248
+
         // 254,255: reserved
     };
 
@@ -399,6 +402,9 @@ public:
     AP_Int8         land_repositioning;
     AP_Float        ekfcheck_thresh;
     AP_Float        dcmcheck_thresh;
+
+    // Air sensors
+    AP_Int16         air_sensor;
 
 #if FRAME_CONFIG ==     HELI_FRAME
     // Heli

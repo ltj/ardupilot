@@ -795,6 +795,14 @@
   #  define FRSKY_TELEM_ENABLED          ENABLED
 #endif
 
+
+//////////////////////////////////////////////////////////////////////////////
+// Custom parameters
+//
+#ifndef AIR_SENSOR_DEFAULT
+ # define AIR_SENSOR_DEFAULT      42     // default value for my new parameter
+#endif
+
 /*
   build a firmware version string.
   GIT_VERSION comes from Makefile builds

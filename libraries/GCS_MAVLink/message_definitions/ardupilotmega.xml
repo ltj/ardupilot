@@ -125,6 +125,15 @@
       </enums>
 
      <messages>
+      <message id="145" name="SENSOR_REQUEST">
+               <description>Request: This for testing how to create a MAVLink message and thereby be able to transfor sensor values from drone to GCS.</description>
+               <field type="int32_t" name="sensor_number">number of sensor</field>
+          </message>
+          <message id="146" name="SENSOR_RESPOND">
+               <description>Respond: This for testing how to create a MAVLink message and thereby be able to transfor sensor values from drone to GCS.</description>
+               <field type="int32_t" name="sensor_number">number of sensor</field>
+               <field type="int32_t" name="sensor_value">value</field>
+          </message>
           <message id="150" name="SENSOR_OFFSETS">
                <description>Offsets and calibrations values for hardware
         sensors. This makes it easier to debug the calibration process.</description>

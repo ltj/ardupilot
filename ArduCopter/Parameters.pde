@@ -996,6 +996,13 @@ const AP_Param::Info var_info[] PROGMEM = {
     // @User: Standard
     GSCALAR(autotune_aggressiveness, "AUTOTUNE_AGGR", 0.05f),
 
+    // @Param: AIR_SENSOR
+    // @DisplayName: Air sensor Parameter
+    // @Description: A description of my new parameter goes here
+    // @Range: -32768 32767
+    // @User: Standard
+    GSCALAR(air_sensor, "AIR_SENSOR", AIR_SENSOR_DEFAULT),
+
     AP_VAREND
 };
 

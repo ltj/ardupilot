@@ -879,6 +879,41 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 
     switch (msg->msgid) {
 
+    /*********************
+    * Sensor test message
+    *********************/
+    case MAVLINK_MSG_ID_SENSOR_REQUEST:
+    {
+      hal.console->printf_P(PSTR("Got sensor request!!"));
+      cliSerial->printf_P(PSTR("Got sensor request!!"));
+      send_text_P(SEVERITY_LOW, PSTR("Got sensor request"));
+        /*
+      handle_sensor_request(
+      get id
+      request measurement from sensor #id
+      return measured data
+      
+      
+      
+      mavlink_msg_sensor
+      handle_sensor_request(msg);*/
+      break;      
+    }
+    
+    case MAVLINK_MSG_ID_SENSOR_RESPOND:
+    {
+      hal.console->printf_P(PSTR("Got sensor respond!!"));
+      cliSerial->printf_P(PSTR("Got sensor respond!!"));
+      send_text_P(SEVERITY_LOW, PSTR("Got sensor respond!!"));
+      int sensor = 2;//msg->sensor_number;
+      int value = 42;//msg->value;      
+      /*mavlink_msg_sensor_respond_send(
+        sensor,
+        value);*/
+      
+      break;      
+    }
+
     case MAVLINK_MSG_ID_HEARTBEAT:      // MAV ID: 0
     {
         // We keep track of the last time we received a heartbeat from our GCS for failsafe purposes
