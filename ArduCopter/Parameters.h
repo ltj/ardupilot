@@ -321,7 +321,8 @@ public:
         k_param_pi_vel_xy,  // 247
 
         // air sensors
-        k_param_air_sensor, // 248
+        k_param_generici2c, // 248
+        k_param_air_sensor, // 249
 
         // 254,255: reserved
     };
