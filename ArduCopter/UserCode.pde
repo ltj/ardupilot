@@ -5,6 +5,7 @@ void userhook_init()
 {
     // put your initialisation code here
     // this will be called once at start-up
+    sensor.init();
 }
 #endif
 
@@ -40,5 +41,14 @@ void userhook_SlowLoop()
 void userhook_SuperSlowLoop()
 {
     // put your 1Hz code here
+    if(sensor.read()) {
+    	hal.console->print("hello, value: ");
+    	hal.console->printf("%d\n", sensor.get_value());
+    }
+    else {
+    	hal.console->println("Something wrong with sensor");
+    }
+    
+    mavlink_msg_named_value_int_send(MAVLINK_COMM_1, hal.scheduler->millis(), "sensor_val", sensor.get_value());
 }
 #endif

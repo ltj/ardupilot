@@ -943,6 +943,10 @@ const AP_Param::Info var_info[] PROGMEM = {
     // @Path: ../libraries/AP_Compass/Compass.cpp
     GOBJECT(compass,        "COMPASS_", Compass),
 
+    // @Group: SENSOR_
+    // @Path: ../libraries/AP_Sensor/AP_Sensor.cpp
+    GOBJECT(sensor,        "SENSOR_", AP_Sensor),
+
     // @Group: INS_
     // @Path: ../libraries/AP_InertialSensor/AP_InertialSensor.cpp
     GOBJECT(ins,            "INS_", AP_InertialSensor),
