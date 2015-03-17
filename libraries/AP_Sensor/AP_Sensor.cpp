@@ -15,20 +15,20 @@ const AP_Param::GroupInfo AP_Sensor::var_info[] PROGMEM = {
 
 bool AP_Sensor::init() {
 
-	hal.scheduler->suspend_timer_procs();
-    hal.scheduler->delay(10);
+	// hal.scheduler->suspend_timer_procs();
+  hal.scheduler->delay(10);
 
-    AP_HAL::Semaphore*  _i2c_sem = hal.i2c->get_semaphore();
+    _i2c_sem = hal.i2c->get_semaphore();
     if (!_i2c_sem->take(HAL_SEMAPHORE_BLOCK_FOREVER)) {
-        hal.scheduler->panic(PSTR("Failed to get Teensy semaphore"));
+        hal.scheduler->panic(PSTR("Failed to get I2C semaphore"));
     }
 
-    uint8_t data[] = {0x00, 54};
+    // uint8_t data[] = {0x00, 54};
     // write byte to add 0
-    hal.i2c->writeRegisters(SENSOR_ADDRESS, 0x10, 2, data);
+    // hal.i2c->writeRegisters(SENSOR_ADDRESS, 0x10, 2, data);
 
     _i2c_sem->give();
-    hal.scheduler->resume_timer_procs();
+    //hal.scheduler->resume_timer_procs();
     _flags.initialised = true;
 	return true;
 }
@@ -37,23 +37,29 @@ bool AP_Sensor::read() {
 	if(!_flags.initialised) return false;
 
 	uint8_t buf[3];
-	AP_HAL::Semaphore*  _i2c_sem = hal.i2c->get_semaphore();
+  uint8_t rval;
+  uint8_t data[] = {0x40};
 
-	if (!_i2c_sem->take(1)) {
+	if (!_i2c_sem->take(5)) {
        // the bus is busy - try again later
        return false;
    	}
 
     // write byte to add 0
-    hal.i2c->writeRegister(SENSOR_ADDRESS, 0x20, 0x00);
-   	//hal.i2c->setHighSpeed(false);
-   	//hal.i2c->writeRegister(SENSOR_ADDRESS, 0x40, 0x00);
-
-   	if (hal.i2c->read(SENSOR_ADDRESS, 1, buf) != 0) {
-        _sensor_value = buf[0];
+    //hal.i2c->writeRegister(SENSOR_ADDRESS, 0x20, 0x00);
+   	if(hal.i2c->write((uint8_t)SENSOR_ADDRESS, 1, data) != 0) {
+      hal.console->println("seems write reg went bad");
     }
 
-   	_i2c_sem->give();
+   	if (hal.i2c->read((uint8_t)SENSOR_ADDRESS, 1, buf) != 0) {
+        hal.console->println("seems read reg went bad");
+    }
+    else {
+      hal.console->println("seems read reg went OK");
+      _sensor_value = buf[0];
+    }
+
+    _i2c_sem->give();
 
 	return true;
 }

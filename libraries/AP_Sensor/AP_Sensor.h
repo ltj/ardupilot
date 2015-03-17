@@ -33,6 +33,7 @@ protected:
 
 private:
 	int16_t _sensor_value;
+	AP_HAL::Semaphore*  _i2c_sem;
 };
 
 #endif // AP_SENSOR_H
