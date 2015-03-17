@@ -4,7 +4,7 @@
 #include <AP_Progmem.h>
 #include <AP_HAL.h>
 
-#define SENSOR_ADDRESS 0x42
+#define SENSOR_ADDRESS 0x44
 
 extern const AP_HAL::HAL& hal;
 
@@ -23,6 +23,10 @@ bool AP_Sensor::init() {
         hal.scheduler->panic(PSTR("Failed to get Teensy semaphore"));
     }
 
+    uint8_t data[] = {0x00, 54};
+    // write byte to add 0
+    hal.i2c->writeRegisters(SENSOR_ADDRESS, 0x10, 2, data);
+
     _i2c_sem->give();
     hal.scheduler->resume_timer_procs();
     _flags.initialised = true;
@@ -40,10 +44,10 @@ bool AP_Sensor::read() {
        return false;
    	}
 
-   	// hal.i2c->setHighSpeed(false);
-   	hal.i2c->writeRegisters(SENSOR_ADDRESS, 0, 0, NULL);
-
-   	hal.scheduler->delay(5);
+    // write byte to add 0
+    hal.i2c->writeRegister(SENSOR_ADDRESS, 0x20, 0x00);
+   	//hal.i2c->setHighSpeed(false);
+   	//hal.i2c->writeRegister(SENSOR_ADDRESS, 0x40, 0x00);
 
    	if (hal.i2c->read(SENSOR_ADDRESS, 1, buf) != 0) {
         _sensor_value = buf[0];

@@ -8,7 +8,8 @@
 class AP_Sensor {
 public:
 	AP_Sensor() : 
-		_last_update(0)
+		_last_update(0),
+		_sensor_value(42)
 	{
 		_flags.initialised = false;
 		_flags.healthy = false;
