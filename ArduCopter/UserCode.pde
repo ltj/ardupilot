@@ -40,6 +40,38 @@ void userhook_SlowLoop()
 void userhook_SuperSlowLoop()
 {
     // put your 1Hz code here
+	// I2C test
+	bool gotSema = true;
+	uint8_t buf[7];
+
+	AP_HAL::Semaphore* i2c_sem = hal.i2c->get_semaphore();
+	if (i2c_sem == NULL || !i2c_sem->take(1)) {
+        gotSema = false;
+    }
+
+    if(gotSema) {
+    	hal.console->println("Reading registers");
+
+    	uint8_t toSend[1] = { 0x00 };
+    	uint8_t result = hal.i2c->write(104, 1, toSend);
+		hal.console->printf("I2C write result: %d \n", result);
+
+    	// uint8_t result = hal.i2c->readRegisters((uint8_t)0x68, 0, 7, buf);
+    	
+    	result = hal.i2c->read(104, 7, buf);
+    	hal.console->printf("I2C read result: %d \n", result);
+
+    	hal.console->print("DateTime: ");
+    	for(int i=0; i<7; i++) {
+    		// int8_t binval = buf[i] - 6 * (buf[i] >> 4);
+    		hal.console->printf("%u ", buf[i]);
+    	}
+    	hal.console->println();
+
+    	i2c_sem->give();
+    }
+
+    // get some GPS data and send out custom MAVLINK
     static int32_t value = 0;
     uint64_t usec = gps.time_epoch_usec();
     const Location &loc = gps.location();
