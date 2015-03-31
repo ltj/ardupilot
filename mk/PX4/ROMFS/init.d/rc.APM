@@ -367,6 +367,12 @@ then
     echo "Found px4flow sensor"
 fi
 
+# Teensysense board
+if teensysense start
+then
+    echo "Found teensysense"
+fi
+
 # optional PWM input driver
 if pwm_input start
 then

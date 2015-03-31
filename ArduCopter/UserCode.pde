@@ -5,6 +5,7 @@ void userhook_init()
 {
     // put your initialisation code here
     // this will be called once at start-up
+    teensy.init();
 }
 #endif
 
@@ -40,5 +41,10 @@ void userhook_SlowLoop()
 void userhook_SuperSlowLoop()
 {
     // put your 1Hz code here
+    int value = teensy.read());
+    uint64_t usec = gps.time_epoch_usec(0);
+    const Location &loc = gps.location();
+	mavlink_msg_sensor_send(MAVLINK_COMM_1, value, "test_sensor", usec, loc.alt, loc.lng, loc.lat);
+    hal.console->println("Mavlink message (200) sent");
 }
 #endif
