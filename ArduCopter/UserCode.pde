@@ -41,8 +41,9 @@ void userhook_SlowLoop()
 void userhook_SuperSlowLoop()
 {
     // put your 1Hz code here
-    int value = teensy.read());
+    int16_t value = teensy.read();
     uint64_t usec = gps.time_epoch_usec(0);
+    hal.console->printf("value: %d, epoch: %llu \n", value, usec);
     const Location &loc = gps.location();
 	mavlink_msg_sensor_send(MAVLINK_COMM_1, value, "test_sensor", usec, loc.alt, loc.lng, loc.lat);
     hal.console->println("Mavlink message (200) sent");
