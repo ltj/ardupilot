@@ -1,0 +1,48 @@
+#include <AP_HAL.h>
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_PX4
+
+#include "AP_Teensysense.h"
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+
+#include <drivers/drv_teensysense.h>
+#include <stdio.h>
+#include <errno.h>
+
+extern const AP_HAL::HAL& hal;
+
+// constructor
+AP_Teensysense::AP_Teensysense() : 
+	_initialised(false) 
+{
+	
+}
+
+void AP_Teensysense::init() {
+	_sensor_fd = open(TEENSY0_DEVICE_PATH, O_RDONLY);
+	_initialised = true;
+}
+
+int16_t AP_Teensysense::read() {
+	if (_initialised) {
+		if (_sensor_fd != -1) {
+			struct teensy_sensor_report report;
+			::read(_sensor_fd, &report, sizeof(report));
+			return report.i_value;
+		}
+		else {
+			hal.console->println("Teensy Error: sysfs");
+		}
+	}
+	else {
+		hal.console->println("Teensy Error: not initialized");
+	}
+	return -1;
+}
+
+
+#endif
