@@ -561,10 +561,20 @@
         <field name="terrain_alt_variance" type="float">Terrain Altitude variance</field>
     </message>
 
-    <message name="SENSOR" id="200">
+    <message name="INT_SENSOR" id="200">
         <description>Onboard sensor message.</description>
         <field type="int32_t" name="value">measured value</field>
-        <field type="char[16]" name="sensorType">Type of the sensor</field>
+        <field type="char[16]" name="description">Description</field>
+        <field type="uint64_t" name="time_usec">Unix epoch time</field>
+        <field type="int32_t" name="altitude">Altitude</field>
+        <field type="int32_t" name="longitude">Longitude</field>
+        <field type="int32_t" name="latitude">Latitude</field>
+    </message>
+
+    <message name="FLOAT_SENSOR" id="201">
+        <description>Onboard sensor message.</description>
+        <field type="float" name="value">measured value</field>
+        <field type="char[16]" name="description">Description</field>
         <field type="uint64_t" name="time_usec">Unix epoch time</field>
         <field type="int32_t" name="altitude">Altitude</field>
         <field type="int32_t" name="longitude">Longitude</field>

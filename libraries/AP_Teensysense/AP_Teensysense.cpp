@@ -27,12 +27,13 @@ void AP_Teensysense::init() {
 	_initialised = true;
 }
 
-int16_t AP_Teensysense::read() {
+bool AP_Teensysense::read(int16_t *val) {
 	if (_initialised) {
 		if (_sensor_fd != -1) {
 			struct teensy_sensor_report report;
 			::read(_sensor_fd, &report, sizeof(report));
-			return report.i_value;
+			*val = report.i_value;
+			return report.isnew;
 		}
 		else {
 			hal.console->println("Teensy Error: sysfs");

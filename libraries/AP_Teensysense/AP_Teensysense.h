@@ -10,7 +10,7 @@ class AP_Teensysense {
 public:
 	AP_Teensysense();
 	void init();
-	int16_t read();
+	bool read(int16_t*);
 
 private:
 	int16_t _sensor_value;
