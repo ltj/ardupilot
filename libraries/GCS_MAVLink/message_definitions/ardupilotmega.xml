@@ -651,7 +651,27 @@
         <field name="terrain_alt_variance" type="float">Terrain Altitude variance</field>
     </message>
 
-    <message name="GIMBAL_REPORT" id="200">
+    <message name="INT_SENSOR" id="200">
+        <description>Onboard sensor message.</description>
+        <field type="int32_t" name="value">measured value</field>
+        <field type="char[16]" name="description">Description</field>
+        <field type="uint64_t" name="time_usec">Unix epoch time</field>
+        <field type="int32_t" name="altitude">Altitude</field>
+        <field type="int32_t" name="longitude">Longitude</field>
+        <field type="int32_t" name="latitude">Latitude</field>
+    </message>
+
+    <message name="FLOAT_SENSOR" id="201">
+        <description>Onboard sensor message.</description>
+        <field type="float" name="value">measured value</field>
+        <field type="char[16]" name="description">Description</field>
+        <field type="uint64_t" name="time_usec">Unix epoch time</field>
+        <field type="int32_t" name="altitude">Altitude</field>
+        <field type="int32_t" name="longitude">Longitude</field>
+        <field type="int32_t" name="latitude">Latitude</field>
+    </message>
+
+    <message name="GIMBAL_REPORT" id="198">
         <description>3 axis gimbal mesuraments</description>
         <field type="uint8_t" name="target_system">System ID</field>
         <field type="uint8_t" name="target_component">Component ID</field>
@@ -667,7 +687,7 @@
         <field type="float" name="joint_az"> Joint AZ (radians)</field>
     </message>
 
-    <message name="GIMBAL_CONTROL" id="201">
+    <message name="GIMBAL_CONTROL" id="199">
         <description>Control message for rate gimbal</description>
         <field type="uint8_t" name="target_system">System ID</field>
         <field type="uint8_t" name="target_component">Component ID</field>

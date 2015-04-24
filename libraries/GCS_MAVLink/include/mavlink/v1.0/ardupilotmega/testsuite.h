@@ -1708,6 +1708,102 @@ static void mavlink_test_ekf_status_report(uint8_t system_id, uint8_t component_
         MAVLINK_ASSERT(memcmp(&packet1, &packet2, sizeof(packet1)) == 0);
 }
 
+static void mavlink_test_int_sensor(uint8_t system_id, uint8_t component_id, mavlink_message_t *last_msg)
+{
+	mavlink_message_t msg;
+        uint8_t buffer[MAVLINK_MAX_PACKET_LEN];
+        uint16_t i;
+	mavlink_int_sensor_t packet_in = {
+		93372036854775807ULL,963497880,963498088,963498296,963498504,"YZABCDEFGHIJKLM"
+    };
+	mavlink_int_sensor_t packet1, packet2;
+        memset(&packet1, 0, sizeof(packet1));
+        	packet1.time_usec = packet_in.time_usec;
+        	packet1.value = packet_in.value;
+        	packet1.altitude = packet_in.altitude;
+        	packet1.longitude = packet_in.longitude;
+        	packet1.latitude = packet_in.latitude;
+        
+        	mav_array_memcpy(packet1.description, packet_in.description, sizeof(char)*16);
+        
+
+        memset(&packet2, 0, sizeof(packet2));
+	mavlink_msg_int_sensor_encode(system_id, component_id, &msg, &packet1);
+	mavlink_msg_int_sensor_decode(&msg, &packet2);
+        MAVLINK_ASSERT(memcmp(&packet1, &packet2, sizeof(packet1)) == 0);
+
+        memset(&packet2, 0, sizeof(packet2));
+	mavlink_msg_int_sensor_pack(system_id, component_id, &msg , packet1.value , packet1.description , packet1.time_usec , packet1.altitude , packet1.longitude , packet1.latitude );
+	mavlink_msg_int_sensor_decode(&msg, &packet2);
+        MAVLINK_ASSERT(memcmp(&packet1, &packet2, sizeof(packet1)) == 0);
+
+        memset(&packet2, 0, sizeof(packet2));
+	mavlink_msg_int_sensor_pack_chan(system_id, component_id, MAVLINK_COMM_0, &msg , packet1.value , packet1.description , packet1.time_usec , packet1.altitude , packet1.longitude , packet1.latitude );
+	mavlink_msg_int_sensor_decode(&msg, &packet2);
+        MAVLINK_ASSERT(memcmp(&packet1, &packet2, sizeof(packet1)) == 0);
+
+        memset(&packet2, 0, sizeof(packet2));
+        mavlink_msg_to_send_buffer(buffer, &msg);
+        for (i=0; i<mavlink_msg_get_send_buffer_length(&msg); i++) {
+        	comm_send_ch(MAVLINK_COMM_0, buffer[i]);
+        }
+	mavlink_msg_int_sensor_decode(last_msg, &packet2);
+        MAVLINK_ASSERT(memcmp(&packet1, &packet2, sizeof(packet1)) == 0);
+        
+        memset(&packet2, 0, sizeof(packet2));
+	mavlink_msg_int_sensor_send(MAVLINK_COMM_1 , packet1.value , packet1.description , packet1.time_usec , packet1.altitude , packet1.longitude , packet1.latitude );
+	mavlink_msg_int_sensor_decode(last_msg, &packet2);
+        MAVLINK_ASSERT(memcmp(&packet1, &packet2, sizeof(packet1)) == 0);
+}
+
+static void mavlink_test_float_sensor(uint8_t system_id, uint8_t component_id, mavlink_message_t *last_msg)
+{
+	mavlink_message_t msg;
+        uint8_t buffer[MAVLINK_MAX_PACKET_LEN];
+        uint16_t i;
+	mavlink_float_sensor_t packet_in = {
+		93372036854775807ULL,73.0,963498088,963498296,963498504,"YZABCDEFGHIJKLM"
+    };
+	mavlink_float_sensor_t packet1, packet2;
+        memset(&packet1, 0, sizeof(packet1));
+        	packet1.time_usec = packet_in.time_usec;
+        	packet1.value = packet_in.value;
+        	packet1.altitude = packet_in.altitude;
+        	packet1.longitude = packet_in.longitude;
+        	packet1.latitude = packet_in.latitude;
+        
+        	mav_array_memcpy(packet1.description, packet_in.description, sizeof(char)*16);
+        
+
+        memset(&packet2, 0, sizeof(packet2));
+	mavlink_msg_float_sensor_encode(system_id, component_id, &msg, &packet1);
+	mavlink_msg_float_sensor_decode(&msg, &packet2);
+        MAVLINK_ASSERT(memcmp(&packet1, &packet2, sizeof(packet1)) == 0);
+
+        memset(&packet2, 0, sizeof(packet2));
+	mavlink_msg_float_sensor_pack(system_id, component_id, &msg , packet1.value , packet1.description , packet1.time_usec , packet1.altitude , packet1.longitude , packet1.latitude );
+	mavlink_msg_float_sensor_decode(&msg, &packet2);
+        MAVLINK_ASSERT(memcmp(&packet1, &packet2, sizeof(packet1)) == 0);
+
+        memset(&packet2, 0, sizeof(packet2));
+	mavlink_msg_float_sensor_pack_chan(system_id, component_id, MAVLINK_COMM_0, &msg , packet1.value , packet1.description , packet1.time_usec , packet1.altitude , packet1.longitude , packet1.latitude );
+	mavlink_msg_float_sensor_decode(&msg, &packet2);
+        MAVLINK_ASSERT(memcmp(&packet1, &packet2, sizeof(packet1)) == 0);
+
+        memset(&packet2, 0, sizeof(packet2));
+        mavlink_msg_to_send_buffer(buffer, &msg);
+        for (i=0; i<mavlink_msg_get_send_buffer_length(&msg); i++) {
+        	comm_send_ch(MAVLINK_COMM_0, buffer[i]);
+        }
+	mavlink_msg_float_sensor_decode(last_msg, &packet2);
+        MAVLINK_ASSERT(memcmp(&packet1, &packet2, sizeof(packet1)) == 0);
+        
+        memset(&packet2, 0, sizeof(packet2));
+	mavlink_msg_float_sensor_send(MAVLINK_COMM_1 , packet1.value , packet1.description , packet1.time_usec , packet1.altitude , packet1.longitude , packet1.latitude );
+	mavlink_msg_float_sensor_decode(last_msg, &packet2);
+        MAVLINK_ASSERT(memcmp(&packet1, &packet2, sizeof(packet1)) == 0);
+}
+
 static void mavlink_test_gimbal_report(uint8_t system_id, uint8_t component_id, mavlink_message_t *last_msg)
 {
 	mavlink_message_t msg;
@@ -2611,6 +2707,8 @@ static void mavlink_test_ardupilotmega(uint8_t system_id, uint8_t component_id, 
 	mavlink_test_autopilot_version_request(system_id, component_id, last_msg);
 	mavlink_test_led_control(system_id, component_id, last_msg);
 	mavlink_test_ekf_status_report(system_id, component_id, last_msg);
+	mavlink_test_int_sensor(system_id, component_id, last_msg);
+	mavlink_test_float_sensor(system_id, component_id, last_msg);
 	mavlink_test_gimbal_report(system_id, component_id, last_msg);
 	mavlink_test_gimbal_control(system_id, component_id, last_msg);
 	mavlink_test_gimbal_reset(system_id, component_id, last_msg);
