@@ -17,8 +17,10 @@
 
 // To-Do: change the name or move to AP_Math?
 #define AC_ATTITUDE_CONTROL_DEGX100 5729.57795f                 // constant to convert from radians to centi-degrees
-#define AC_ATTITUDE_CONTROL_RATE_RP_MAX_DEFAULT         18000   // maximum rotation rate in roll/pitch axis requested by angle controller used in stabilize, loiter, rtl, auto flight modes
-#define AC_ATTITUDE_CONTROL_RATE_Y_MAX_DEFAULT          9000    // maximum rotation rate on yaw axis requested by angle controller used in stabilize, loiter, rtl, auto flight modes
+#define AC_ATTITUDE_ACCEL_RP_CONTROLLER_MIN             36000.0f// minimum body-frame acceleration limit for the stability controller (for roll and pitch axis)
+#define AC_ATTITUDE_ACCEL_RP_CONTROLLER_MAX             72000.0f// maximum body-frame acceleration limit for the stability controller (for roll and pitch axis)
+#define AC_ATTITUDE_ACCEL_Y_CONTROLLER_MIN              18000.0f// minimum body-frame acceleration limit for the stability controller (for yaw axis)
+#define AC_ATTITUDE_ACCEL_Y_CONTROLLER_MAX              36000.0f// maximum body-frame acceleration limit for the stability controller (for yaw axis)
 #define AC_ATTITUDE_CONTROL_SLEW_YAW_DEFAULT            1000    // constraint on yaw angle error in degrees.  This should lead to maximum turn rate of 10deg/sed * Stab Rate P so by default will be 45deg/sec.
 #define AC_ATTITUDE_CONTROL_ACCEL_RP_MAX_DEFAULT        0       // default maximum acceleration for roll/pitch axis in centi-degrees/sec/sec
 #define AC_ATTITUDE_CONTROL_ACCEL_Y_MAX_DEFAULT         0       // default maximum acceleration for yaw axis in centi-degrees/sec/sec
@@ -138,6 +140,9 @@ public:
     // angle_ef_targets - returns angle controller earth-frame targets (for reporting)
     const Vector3f& angle_ef_targets() const { return _angle_ef_target; }
 
+    // angle_bf_error - returns angle controller body-frame errors (for stability checking)
+    const Vector3f& angle_bf_error() const { return _angle_bf_error; }
+
     // rate_bf_targets - sets rate controller body-frame targets
     void rate_bf_roll_target(float rate_cds) { _rate_bf_target.x = rate_cds; }
     void rate_bf_pitch_target(float rate_cds) { _rate_bf_target.y = rate_cds; }
@@ -174,8 +179,10 @@ public:
     //
 
      // set_throttle_out - to be called by upper throttle controllers when they wish to provide throttle output directly to motors
-     // provide 0 to cut motors
-     void set_throttle_out(int16_t throttle_pwm, bool apply_angle_boost);
+     void set_throttle_out(float throttle_pwm, bool apply_angle_boost, float filt_cutoff);
+
+     // outputs a throttle to all motors evenly with no stabilization
+     void set_throttle_out_unstabilized(float throttle_in, bool reset_attitude_control, float filt_cutoff);
 
      // angle_boost - accessor for angle boost so it can be logged
      int16_t angle_boost() const { return _angle_boost; }
@@ -231,8 +238,8 @@ protected:
     // throttle methods
     //
 
-    // get_angle_boost - calculate total body frame throttle required to produce the given earth frame throttle
-    virtual int16_t get_angle_boost(int16_t throttle_pwm);
+    // calculate total body frame throttle required to produce the given earth frame throttle
+    virtual float get_boosted_throttle(float throttle_in);
 
     // references to external libraries
     const AP_AHRS&      _ahrs;
@@ -246,8 +253,6 @@ protected:
     AC_PID&             _pid_rate_yaw;
 
     // parameters
-    AP_Float            _angle_rate_rp_max;     // maximum rate request output from the earth-frame angle controller for roll and pitch axis
-    AP_Float            _angle_rate_y_max;      // maximum rate request output from the earth-frame angle controller for yaw axis
     AP_Float            _slew_yaw;              // maximum rate the yaw target can be updated in Loiter, RTL, Auto flight modes
     AP_Float            _accel_roll_max;          // maximum rotation acceleration for earth-frame roll axis
     AP_Float            _accel_pitch_max;          // maximum rotation acceleration for earth-frame pitch axis

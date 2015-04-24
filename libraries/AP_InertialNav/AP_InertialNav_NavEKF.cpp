@@ -63,6 +63,15 @@ const Vector3f &AP_InertialNav_NavEKF::get_position(void) const
 }
 
 /**
+ * get_location - updates the provided location with the latest calculated locatoin
+ *  returns true on success (i.e. the EKF knows it's latest position), false on failure
+ */
+bool AP_InertialNav_NavEKF::get_location(struct Location &loc) const
+{
+    return _ahrs_ekf.get_NavEKF().getLLH(loc);
+}
+
+/**
  * get_latitude - returns the latitude of the current position estimation in 100 nano degrees (i.e. degree value multiplied by 10,000,000)
  */
 int32_t AP_InertialNav_NavEKF::get_latitude() const
@@ -109,6 +118,37 @@ float AP_InertialNav_NavEKF::get_velocity_xy() const
 float AP_InertialNav_NavEKF::get_altitude() const
 {
     return _relpos_cm.z;
+}
+
+/**
+ * getHgtAboveGnd - get latest height above ground level estimate in cm and a validity flag
+ *
+ * @return
+ */
+bool AP_InertialNav_NavEKF::get_hagl(float height) const
+{
+    // true when estimate is valid
+    bool valid = _ahrs_ekf.get_NavEKF().getHAGL(height);
+    // convert height from m to cm
+    height *= 100.0f;
+    return valid;
+}
+
+/**
+ * get_hgt_ctrl_limit - get maximum height to be observed by the control loops in cm and a validity flag
+ * this is used to limit height during optical flow navigation
+ * it will return invalid when no limiting is required
+ * @return
+ */
+bool AP_InertialNav_NavEKF::get_hgt_ctrl_limit(float& limit) const
+{
+    // true when estimate is valid
+    if (_ahrs_ekf.get_NavEKF().getHeightControlLimit(limit)) {
+        // convert height from m to cm
+        limit *= 100.0f;
+        return true;
+    }
+    return false;
 }
 
 /**

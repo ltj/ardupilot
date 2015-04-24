@@ -5,7 +5,8 @@
 
 #include <AP_Common.h>
 #include <AP_Progmem.h>
-#include <GCS_MAVLink.h>
+#include <AP_Param.h>
+#include <AP_Math.h>
 #include <AP_HAL.h>
 #include <AP_HAL_AVR.h>
 #include <AP_HAL_AVR_SITL.h>
@@ -13,22 +14,38 @@
 #include <AP_HAL_FLYMAPLE.h>
 #include <AP_HAL_PX4.h>
 #include <AP_HAL_Empty.h>
-#include <AP_Math.h>
-#include <AP_Param.h>
+#include <GCS_MAVLink.h>
 #include <StorageManager.h>
 #include <AC_PID.h>
 #include <AC_HELI_PID.h>
 #include <AP_Scheduler.h>
+#include <DataFlash.h>
+#include <AP_GPS.h>
+#include <AP_Vehicle.h>
+#include <AP_InertialSensor.h>
+#include <Filter.h>
+#include <AP_Baro.h>
+#include <AP_AHRS.h>
+#include <AP_Compass.h>
+#include <AP_Declination.h>
+#include <AP_Airspeed.h>
+#include <AP_NavEKF.h>
+#include <AP_ADC.h>
+#include <AP_ADC_AnalogSource.h>
+#include <AP_Notify.h>
+#include <AP_Mission.h>
+#include <AP_Terrain.h>
+#include <AP_Rally.h>
 
 const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
 
 // default PID values
-#define TEST_P 1.0
-#define TEST_I 0.01
-#define TEST_D 0.2
+#define TEST_P 1.0f
+#define TEST_I 0.01f
+#define TEST_D 0.2f
 #define TEST_IMAX 10
-#define TEST_FILTER 5.0
-#define TEST_DT 0.01
+#define TEST_FILTER 5.0f
+#define TEST_DT 0.01f
 
 // setup function
 void setup()

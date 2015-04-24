@@ -225,9 +225,9 @@ static int16_t get_throttle_pre_takeoff(int16_t throttle_control)
     return throttle_out;
 }
 
-// get_throttle_surface_tracking - hold copter at the desired distance above the ground
+// get_surface_tracking_climb_rate - hold copter at the desired distance above the ground
 //      returns climb rate (in cm/s) which should be passed to the position controller
-static float get_throttle_surface_tracking(int16_t target_rate, float current_alt_target, float dt)
+static float get_surface_tracking_climb_rate(int16_t target_rate, float current_alt_target, float dt)
 {
     static uint32_t last_call_ms = 0;
     float distance_error;
@@ -265,4 +265,28 @@ static void set_accel_throttle_I_from_pilot_throttle(int16_t pilot_throttle)
 {
     // shift difference between pilot's throttle and hover throttle into accelerometer I
     g.pid_accel_z.set_integrator(pilot_throttle-throttle_average);
+}
+
+// updates position controller's maximum altitude using fence and EKF limits
+static void update_poscon_alt_max()
+{
+    float alt_limit_cm = 0.0f;  // interpreted as no limit if left as zero
+
+#if AC_FENCE == ENABLED
+    // set fence altitude limit in position controller
+    if ((fence.get_enabled_fences() & AC_FENCE_TYPE_ALT_MAX) != 0) {
+        alt_limit_cm = pv_alt_above_origin(fence.get_safe_alt()*100.0f);
+    }
+#endif
+
+    // get alt limit from EKF (limited during optical flow flight)
+    float ekf_limit_cm = 0.0f;
+    if (inertial_nav.get_hgt_ctrl_limit(ekf_limit_cm)) {
+        if ((alt_limit_cm <= 0.0f) || (ekf_limit_cm < alt_limit_cm)) {
+            alt_limit_cm = ekf_limit_cm;
+        }
+    }
+
+    // pass limit to pos controller
+    pos_control.set_alt_max(alt_limit_cm);
 }

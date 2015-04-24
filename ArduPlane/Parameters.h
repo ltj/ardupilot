@@ -119,7 +119,7 @@ public:
         k_param_terrain,
         k_param_terrain_follow,
         k_param_stab_pitch_down_cd_old, // deprecated
-        k_param_glide_slope_threshold,
+        k_param_glide_slope_min,
         k_param_stab_pitch_down,
         k_param_terrain_lookahead,
         k_param_fbwa_tdrag_chan,
@@ -135,6 +135,8 @@ public:
         k_param_trim_rc_at_start,
         k_param_hil_mode,
         k_param_land_disarm_delay,
+        k_param_glide_slope_threshold,
+        k_param_rudder_only,
 
         // 100: Arming parameters
         k_param_arming = 100,
@@ -427,6 +429,7 @@ public:
     AP_Int8 mix_mode;
     AP_Int8 vtail_output;
     AP_Int8 elevon_output;
+    AP_Int8 rudder_only;
     AP_Float mixing_gain;
     AP_Int8 reverse_elevons;
     AP_Int8 reverse_ch1_elevon;
@@ -463,7 +466,6 @@ public:
     AP_Float takeoff_tdrag_speed1;
     AP_Float takeoff_rotate_speed;
     AP_Int8 takeoff_throttle_slewrate;
-    AP_Int8 takeoff_throttle_max;
     AP_Int8 level_roll_limit;
     AP_Int8 flapin_channel;
     AP_Int8 flaperon_output;
@@ -471,7 +473,8 @@ public:
     AP_Int8 terrain_follow;
     AP_Int16 terrain_lookahead;
 #endif
-    AP_Int16 glide_slope_threshold;
+    AP_Int16 glide_slope_min;
+    AP_Float glide_slope_threshold;
     AP_Int8 fbwa_tdrag_chan;
     AP_Int8 rangefinder_landing;
     AP_Int8 flap_slewrate;

@@ -194,7 +194,7 @@ static NOINLINE void send_extended_status1(mavlink_channel_t chan)
     if (barometer.all_healthy()) {
         control_sensors_health |= MAV_SYS_STATUS_SENSOR_ABSOLUTE_PRESSURE;
     }
-    if (g.compass_enabled && compass.healthy(0) && ahrs.use_compass()) {
+    if (g.compass_enabled && compass.healthy() && ahrs.use_compass()) {
         control_sensors_health |= MAV_SYS_STATUS_SENSOR_3D_MAG;
     }
     if (gps.status() > AP_GPS::NO_GPS) {
@@ -242,6 +242,16 @@ static NOINLINE void send_extended_status1(mavlink_channel_t chan)
         control_sensors_enabled |= MAV_SYS_STATUS_TERRAIN;
         control_sensors_health  |= MAV_SYS_STATUS_TERRAIN;
         break;
+    }
+#endif
+
+#if CONFIG_SONAR == ENABLED
+    if (sonar.num_sensors() > 0) {
+        control_sensors_present |= MAV_SYS_STATUS_SENSOR_LASER_POSITION;
+        control_sensors_enabled |= MAV_SYS_STATUS_SENSOR_LASER_POSITION;
+        if (sonar.has_data()) {
+            control_sensors_health |= MAV_SYS_STATUS_SENSOR_LASER_POSITION;
+        }
     }
 #endif
 
@@ -399,12 +409,12 @@ static void NOINLINE send_current_waypoint(mavlink_channel_t chan)
 static void NOINLINE send_rangefinder(mavlink_channel_t chan)
 {
     // exit immediately if sonar is disabled
-    if (!sonar.healthy()) {
+    if (!sonar.has_data()) {
         return;
     }
     mavlink_msg_rangefinder_send(
             chan,
-            sonar_alt * 0.01f,
+            sonar.distance_cm() * 0.01f,
             sonar.voltage_mv() * 0.001f);
 }
 #endif
@@ -485,6 +495,11 @@ bool GCS_MAVLINK::try_send_message(enum ap_message id)
     case MSG_LOCATION:
         CHECK_PAYLOAD_SIZE(GLOBAL_POSITION_INT);
         send_location(chan);
+        break;
+
+    case MSG_LOCAL_POSITION:
+        CHECK_PAYLOAD_SIZE(LOCAL_POSITION_NED);
+        send_local_position(ahrs);
         break;
 
     case MSG_NAV_CONTROLLER_OUTPUT:
@@ -611,6 +626,11 @@ bool GCS_MAVLINK::try_send_message(enum ap_message id)
 #endif // MOUNT == ENABLED
         break;
 
+    case MSG_BATTERY2:
+        CHECK_PAYLOAD_SIZE(BATTERY2);
+        gcs[chan-MAVLINK_COMM_0].send_battery2(battery);
+        break;
+
     case MSG_OPTICAL_FLOW:
 #if OPTFLOW == ENABLED
         CHECK_PAYLOAD_SIZE(OPTICAL_FLOW);
@@ -638,9 +658,6 @@ bool GCS_MAVLINK::try_send_message(enum ap_message id)
         break;
 
     case MSG_RETRY_DEFERRED:
-        break; // just here to prevent a warning
-
-    case MSG_BATTERY2:
         break; // just here to prevent a warning
     }
 
@@ -745,7 +762,7 @@ bool GCS_MAVLINK::stream_trigger(enum streams stream_num)
     // parameter sends
     if ((stream_num != STREAM_PARAMS) &&
         (waypoint_receiving || _queued_parameter != NULL)) {
-        rate *= 0.25;
+        rate *= 0.25f;
     }
 
     if (rate <= 0) {
@@ -819,6 +836,7 @@ GCS_MAVLINK::data_stream_send(void)
 
     if (stream_trigger(STREAM_POSITION)) {
         send_message(MSG_LOCATION);
+        send_message(MSG_LOCAL_POSITION);
     }
 
     if (gcs_out_of_time) return;
@@ -857,6 +875,7 @@ GCS_MAVLINK::data_stream_send(void)
 #if AP_TERRAIN_AVAILABLE
         send_message(MSG_TERRAIN);
 #endif
+        send_message(MSG_BATTERY2);
         send_message(MSG_MOUNT_STATUS);
         send_message(MSG_OPTICAL_FLOW);
         send_message(MSG_GIMBAL_REPORT);
@@ -1354,11 +1373,15 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
          */
 
         if (!pos_ignore && !vel_ignore && acc_ignore) {
-            guided_set_destination_posvel(Vector3f(packet.x * 100.0f, packet.y * 100.0f, -packet.z * 100.0f), Vector3f(packet.vx * 100.0f, packet.vy * 100.0f, -packet.vz * 100.0f));
+            Vector3f pos_ned = Vector3f(packet.x * 100.0f, packet.y * 100.0f, -packet.z * 100.0f);
+            pos_ned.z = pv_alt_above_origin(pos_ned.z);
+            guided_set_destination_posvel(pos_ned, Vector3f(packet.vx * 100.0f, packet.vy * 100.0f, -packet.vz * 100.0f));
         } else if (pos_ignore && !vel_ignore && acc_ignore) {
             guided_set_velocity(Vector3f(packet.vx * 100.0f, packet.vy * 100.0f, -packet.vz * 100.0f));
         } else if (!pos_ignore && vel_ignore && acc_ignore) {
-            guided_set_destination(Vector3f(packet.x * 100.0f, packet.y * 100.0f, -packet.z * 100.0f));
+            Vector3f pos_ned = Vector3f(packet.x * 100.0f, packet.y * 100.0f, -packet.z * 100.0f);
+            pos_ned.z = pv_alt_above_origin(pos_ned.z);
+            guided_set_destination(pos_ned);
         } else {
             result = MAV_RESULT_FAILED;
         }
@@ -1497,6 +1520,12 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
     case MAVLINK_MSG_ID_SERIAL_CONTROL:
         handle_serial_control(msg, gps);
         break;
+
+    case MAVLINK_MSG_ID_GPS_INJECT_DATA:
+        handle_gps_inject(msg, gps);
+        result = MAV_RESULT_ACCEPTED;
+        break;
+
 #endif
 
 #if CAMERA == ENABLED
@@ -1504,7 +1533,8 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
         break;
 
     case MAVLINK_MSG_ID_DIGICAM_CONTROL:
-        do_take_picture();
+        camera.control_msg(msg);
+        log_picture();
         break;
 #endif // CAMERA == ENABLED
 

@@ -189,6 +189,7 @@ static int32_t pitch_limit_min_cd;
 
 // GPS driver
 static AP_GPS gps;
+static RangeFinder rng;
 
 // flight modes convenience array
 static AP_Int8          *flight_modes = &g.flight_mode1;
@@ -205,7 +206,7 @@ AP_InertialSensor ins;
 
 // Inertial Navigation EKF
 #if AP_AHRS_NAVEKF_AVAILABLE
-AP_AHRS_NavEKF ahrs(ins, barometer, gps);
+AP_AHRS_NavEKF ahrs(ins, barometer, gps, rng);
 #else
 AP_AHRS_DCM ahrs(ins, barometer, gps);
 #endif
@@ -395,7 +396,7 @@ static struct {
 // This is used to scale GPS values for EEPROM storage
 // 10^7 times Decimal GPS means 1 == 1cm
 // This approximation makes calculations integer and it's easy to read
-static const float t7                        = 10000000.0;
+static const float t7                        = 10000000.0f;
 // We use atan2 and other trig techniques to calaculate angles
 // A counter used to count down valid gps fixes to allow the gps estimate to settle
 // before recording our home position (and executing a ground start if we booted with an air start)
@@ -595,6 +596,9 @@ static int32_t nav_roll_cd;
 
 // The instantaneous desired pitch angle.  Hundredths of a degree
 static int32_t nav_pitch_cd;
+
+// we separate out rudder input to allow for RUDDER_ONLY=1
+static int16_t rudder_input;
 
 // the aerodymamic load factor. This is calculated from the demanded
 // roll before the roll is clipped, using 1/sqrt(cos(nav_roll))
@@ -797,7 +801,7 @@ static const AP_Scheduler::Task scheduler_tasks[] PROGMEM = {
     { update_logging1,        5,   1700 },
     { update_logging2,        5,   1700 },
 #if FRSKY_TELEM_ENABLED == ENABLED
-    { telemetry_send,        10,    100 },	
+    { frsky_telemetry_send,  10,    100 },
 #endif
     { terrain_update,         5,    500 },
 };
@@ -1195,9 +1199,8 @@ static void handle_auto_mode(void)
     case MAV_CMD_NAV_TAKEOFF:
         takeoff_calc_roll();
         takeoff_calc_pitch();
-        
-        // max throttle for takeoff
-        channel_throttle->servo_out = takeoff_throttle();
+        calc_throttle();
+
         break;
 
     case MAV_CMD_NAV_LAND:
@@ -1363,7 +1366,7 @@ static void update_flight_mode(void)
           any aileron or rudder input
         */
         if ((channel_roll->control_in != 0 ||
-             channel_rudder->control_in != 0)) {                
+             rudder_input != 0)) {                
             cruise_state.locked_heading = false;
             cruise_state.lock_timer_ms = 0;
         }                 
@@ -1620,9 +1623,7 @@ static void update_optical_flow(void)
         uint8_t flowQuality = optflow.quality();
         Vector2f flowRate = optflow.flowRate();
         Vector2f bodyRate = optflow.bodyRate();
-        // Use range from a separate range finder if available, not the PX4Flows built in sensor which is ineffective
-        float ground_distance_m = 0.01f*rangefinder.distance_cm();
-        ahrs.writeOptFlowMeas(flowQuality, flowRate, bodyRate, last_of_update, rangefinder_state.in_range_count, ground_distance_m);
+        ahrs.writeOptFlowMeas(flowQuality, flowRate, bodyRate, last_of_update);
         Log_Write_Optflow();
     }
 }

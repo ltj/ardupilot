@@ -86,7 +86,7 @@ def build_motors(frame):
 class MultiCopter(Aircraft):
     '''a MultiCopter'''
     def __init__(self, frame='+',
-                 hover_throttle=0.45,
+                 hover_throttle=0.51,
                  terminal_velocity=15.0,
                  frame_height=0.1,
                  mass=1.5):
@@ -167,6 +167,9 @@ class MultiCopter(Aircraft):
         # acceleration (ie. real movement), plus gravity
         self.accel_body = self.dcm.transposed() * (accel_earth + Vector3(0, 0, -self.gravity))
 
+        # add some noise
+        self.add_noise(thrust / (self.thrust_scale * len(self.motors)))
+
         # new velocity vector
         self.velocity += accel_earth * delta_time
 
@@ -188,4 +191,4 @@ class MultiCopter(Aircraft):
                                     -(self.ground_level + self.frame_height - self.home_altitude))
 
         # update lat/lon/altitude
-        self.update_position(delta_time)
+        self.update_position()

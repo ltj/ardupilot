@@ -94,13 +94,22 @@ const AP_Param::Info var_info[] PROGMEM = {
     GSCALAR(stab_pitch_down, "STAB_PITCH_DOWN",   2.0f),
 
     // @Param: GLIDE_SLOPE_MIN
-    // @DisplayName: Glide slope threshold
+    // @DisplayName: Glide slope minimum
     // @Description: This controls the minimum altitude change for a waypoint before a glide slope will be used instead of an immediate altitude change. The default value is 15 meters, which helps to smooth out waypoint missions where small altitude changes happen near waypoints. If you don't want glide slopes to be used in missions then you can set this to zero, which will disable glide slope calculations. Otherwise you can set it to a minimum number of meters of altitude error to the destination waypoint before a glide slope will be used to change altitude.
     // @Range: 0 1000
     // @Increment: 1
     // @Units: meters
     // @User: Advanced
-    GSCALAR(glide_slope_threshold, "GLIDE_SLOPE_MIN", 15),
+    GSCALAR(glide_slope_min, "GLIDE_SLOPE_MIN", 15),
+
+    // @Param: GLIDE_SLOPE_THR
+    // @DisplayName: Glide slope threshold
+    // @Description: This controls the height above the glide slope the plane may be before rebuilding a glide slope. This is useful for smoothing out an autotakeoff
+    // @Range: 0 100
+    // @Increment: 1
+    // @Units: meters
+    // @User: Advanced
+    GSCALAR(glide_slope_threshold, "GLIDE_SLOPE_THR", 5.0),
 
     // @Param: STICK_MIXING
     // @DisplayName: Stick Mixing
@@ -239,7 +248,7 @@ const AP_Param::Info var_info[] PROGMEM = {
     // @Increment: 1
     // @Range: 0 127
     // @User: Advanced
-    GSCALAR(land_disarm_delay,       "LAND_DISARMDELAY",  0),
+    GSCALAR(land_disarm_delay,       "LAND_DISARMDELAY",  20),
 
 	// @Param: NAV_CONTROLLER
 	// @DisplayName: Navigation controller selection
@@ -444,7 +453,7 @@ const AP_Param::Info var_info[] PROGMEM = {
     // @Range: 0 100
     // @Increment: 1
     // @User: Advanced
-    GSCALAR(takeoff_throttle_max,   "TKOFF_THR_MAX",        0),
+    ASCALAR(takeoff_throttle_max,   "TKOFF_THR_MAX",        0),
 
     // @Param: THR_SLEWRATE
     // @DisplayName: Throttle slew rate
@@ -748,6 +757,13 @@ const AP_Param::Info var_info[] PROGMEM = {
     // @User: User
     GSCALAR(mixing_gain,            "MIXING_GAIN",    0.5f),
 
+    // @Param: RUDDER_ONLY
+    // @DisplayName: Rudder only aircraft
+    // @Description: Enable rudder only mode. The rudder will control attitude in attitude controlled modes (such as FBWA). You should setup your transmitter to send roll stick inputs to the RCMAP_YAW channel (normally channel 4). The rudder servo should be attached to the RCMAP_YAW channel as well. Note that automatic ground steering will be disabled for rudder only aircraft. You should also set KFF_RDDRMIX to 1.0. You will also need to setup the YAW2SRV_DAMP yaw damping appropriately for your aircraft. A value of 0.5 for YAW2SRV_DAMP is a good starting point.
+    // @Values: 0:Disabled,1:Enabled
+    // @User: User
+    GSCALAR(rudder_only,             "RUDDER_ONLY",  0),
+
     // @Param: SYS_NUM_RESETS
     // @DisplayName: Num Resets
     // @Description: Number of APM board resets
@@ -756,7 +772,7 @@ const AP_Param::Info var_info[] PROGMEM = {
 
     // @Param: LOG_BITMASK
     // @DisplayName: Log bitmask
-    // @Description: Bitmap of what log types to enable in dataflash. This values is made up of the sum of each of the log types you want to be saved on dataflash. On a PX4 or Pixhawk the large storage size of a microSD card means it is usually best just to enable all log types by setting this to 65535. On APM2 the smaller 4 MByte dataflash means you need to be more selective in your logging or you may run out of log space while flying (in which case it will wrap and overwrite the start of the log). The individual bits are ATTITUDE_FAST=1, ATTITUDE_MEDIUM=2, GPS=4, PerformanceMonitoring=8, ControlTuning=16, NavigationTuning=32, Mode=64, IMU=128, Commands=256, Battery=512, Compass=1024, TECS=2048, Camera=4096, RCandServo=8192, Sonar=16384, Arming=32768, LogWhenDisarmed=65536
+    // @Description: Bitmap of what log types to enable in dataflash. This values is made up of the sum of each of the log types you want to be saved on dataflash. On a PX4 or Pixhawk the large storage size of a microSD card means it is usually best just to enable all log types by setting this to 65535. On APM2 the smaller 4 MByte dataflash means you need to be more selective in your logging or you may run out of log space while flying (in which case it will wrap and overwrite the start of the log). The individual bits are ATTITUDE_FAST=1, ATTITUDE_MEDIUM=2, GPS=4, PerformanceMonitoring=8, ControlTuning=16, NavigationTuning=32, Mode=64, IMU=128, Commands=256, Battery=512, Compass=1024, TECS=2048, Camera=4096, RCandServo=8192, Sonar=16384, Arming=32768, LogWhenDisarmed=65536, FullLogsArmedOnly=65535, FullLogsWhenDisarmed=131071
     // @Values: 0:Disabled,5190:APM2-Default,65535:PX4/Pixhawk-Default
     // @User: Advanced
     GSCALAR(log_bitmask,            "LOG_BITMASK",    DEFAULT_LOG_BITMASK),

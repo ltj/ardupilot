@@ -65,6 +65,7 @@ enum aux_sw_func {
     AUXSW_RETRACT_MOUNT,           // Retract Mount
     AUXSW_RELAY,                   // Relay pin on/off (only supports first relay)
     AUXSW_LANDING_GEAR,            // Landing gear controller
+    AUXSW_LOST_COPTER_SOUND,       // Play lost copter sound
 };
 
 // Frame types
@@ -260,6 +261,7 @@ enum FlipState {
 #define MASK_LOG_CAMERA                 (1<<15)
 #define MASK_LOG_WHEN_DISARMED          (1UL<<16)
 #define MASK_LOG_MOTBATT                (1UL<<17)
+#define MASK_LOG_IMU_FAST               (1UL<<18)
 #define MASK_LOG_ANY                    0xFFFF
 
 // DATA - event logging
@@ -394,8 +396,8 @@ enum FlipState {
 #define MAVLINK_SET_POS_TYPE_MASK_POS_IGNORE      ((1<<0) | (1<<1) | (1<<2))
 #define MAVLINK_SET_POS_TYPE_MASK_VEL_IGNORE      ((1<<3) | (1<<4) | (1<<5))
 #define MAVLINK_SET_POS_TYPE_MASK_ACC_IGNORE      ((1<<6) | (1<<7) | (1<<8))
-#define MAVLINK_SET_POS_TYPE_MASK_FORCE           (1<<10)
-#define MAVLINK_SET_POS_TYPE_MASK_YAW_IGNORE      (1<<11)
-#define MAVLINK_SET_POS_TYPE_MASK_YAW_RATE_IGNORE (1<<12)
+#define MAVLINK_SET_POS_TYPE_MASK_FORCE           (1<<9)
+#define MAVLINK_SET_POS_TYPE_MASK_YAW_IGNORE      (1<<10)
+#define MAVLINK_SET_POS_TYPE_MASK_YAW_RATE_IGNORE (1<<11)
 
 #endif // _DEFINES_H

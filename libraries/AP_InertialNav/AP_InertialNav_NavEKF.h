@@ -49,6 +49,12 @@ public:
     const Vector3f&    get_position() const;
 
     /**
+     * get_llh - updates the provided location with the latest calculated location including absolute altitude
+     *  returns true on success (i.e. the EKF knows it's latest position), false on failure
+     */
+    bool get_location(struct Location &loc) const;
+
+    /**
      * get_latitude - returns the latitude of the current position estimation in 100 nano degrees (i.e. degree value multiplied by 10,000,000)
      */
     int32_t     get_latitude() const;
@@ -81,6 +87,20 @@ public:
      * @return
      */
     float       get_altitude() const;
+
+    /**
+     * getHgtAboveGnd - get latest altitude estimate above ground level in centimetres and validity flag
+     * @return
+     */
+    bool       get_hagl(float hagl) const;
+
+    /**
+     * get_hgt_ctrl_limit - get maximum height to be observed by the control loops in cm and a validity flag
+     * this is used to limit height during optical flow navigation
+     * it will return invalid when no limiting is required
+     * @return
+     */
+    bool       get_hgt_ctrl_limit(float& limit) const;
 
     /**
      * get_velocity_z - returns the current climbrate.

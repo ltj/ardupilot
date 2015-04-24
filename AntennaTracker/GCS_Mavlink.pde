@@ -183,6 +183,11 @@ bool GCS_MAVLINK::try_send_message(enum ap_message id)
         send_location(chan);
         break;
 
+    case MSG_LOCAL_POSITION:
+        CHECK_PAYLOAD_SIZE(LOCAL_POSITION_NED);
+        send_local_position(ahrs);
+        break;
+
     case MSG_NAV_CONTROLLER_OUTPUT:
         CHECK_PAYLOAD_SIZE(NAV_CONTROLLER_OUTPUT);
         send_nav_controller_output(chan);
@@ -422,6 +427,7 @@ GCS_MAVLINK::data_stream_send(void)
 
     if (stream_trigger(STREAM_POSITION)) {
         send_message(MSG_LOCATION);
+        send_message(MSG_LOCAL_POSITION);
     }
 
     if (stream_trigger(STREAM_RAW_CONTROLLER)) {
@@ -761,6 +767,11 @@ mission_failed:
     case MAVLINK_MSG_ID_SERIAL_CONTROL:
         handle_serial_control(msg, gps);
         break;
+
+    case MAVLINK_MSG_ID_GPS_INJECT_DATA:
+        handle_gps_inject(msg, gps);
+        break;
+
 #endif
 
     case MAVLINK_MSG_ID_AUTOPILOT_VERSION_REQUEST:

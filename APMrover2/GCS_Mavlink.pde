@@ -327,29 +327,37 @@ static void NOINLINE send_hwstatus(mavlink_channel_t chan)
 
 static void NOINLINE send_rangefinder(mavlink_channel_t chan)
 {
-    if (!sonar.healthy()) {
+    if (!sonar.has_data(0) && !sonar.has_data(1)) {
         // no sonar to report
         return;
     }
 
+    float distance_cm = 0.0f;
+    float voltage = 0.0f;
+
     /*
-      report smaller distance of two sonars if more than one enabled
+      report smaller distance of two sonars
      */
-    float distance_cm, voltage;
-    if (!sonar.healthy(1)) {
-        distance_cm = sonar.distance_cm(0);
-        voltage = sonar.voltage_mv(0) * 0.001f;
-    } else {
-        float dist1 = sonar.distance_cm(0);
-        float dist2 = sonar.distance_cm(1);
-        if (dist1 <= dist2) {
-            distance_cm = dist1;
-            voltage = sonar.voltage_mv(0) * 0.001f;
+    if (sonar.has_data(0) && sonar.has_data(1)) {
+        if (sonar.distance_cm(0) <= sonar.distance_cm(1)) {
+            distance_cm = sonar.distance_cm(0);
+            voltage = sonar.voltage_mv(0);
         } else {
-            distance_cm = dist2;
+            distance_cm = sonar.distance_cm(1);
+            voltage = sonar.voltage_mv(1);
+        }
+    } else {
+        // only sonar 0 or sonar 1 has data
+        if (sonar.has_data(0)) {
+            distance_cm = sonar.distance_cm(0);
+            voltage = sonar.voltage_mv(0) * 0.001f;
+        }
+        if (sonar.has_data(1)) {
+            distance_cm = sonar.distance_cm(1);
             voltage = sonar.voltage_mv(1) * 0.001f;
         }
     }
+
     mavlink_msg_rangefinder_send(
         chan,
         distance_cm * 0.01f,
@@ -431,6 +439,11 @@ bool GCS_MAVLINK::try_send_message(enum ap_message id)
     case MSG_LOCATION:
         CHECK_PAYLOAD_SIZE(GLOBAL_POSITION_INT);
         send_location(chan);
+        break;
+
+    case MSG_LOCAL_POSITION:
+        CHECK_PAYLOAD_SIZE(LOCAL_POSITION_NED);
+        send_local_position(ahrs);
         break;
 
     case MSG_NAV_CONTROLLER_OUTPUT:
@@ -743,6 +756,7 @@ GCS_MAVLINK::data_stream_send(void)
     if (stream_trigger(STREAM_POSITION)) {
         // sent with GPS read
         send_message(MSG_LOCATION);
+        send_message(MSG_LOCAL_POSITION);
     }
 
     if (gcs_out_of_time) return;
@@ -1141,13 +1155,13 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 #if CAMERA == ENABLED
     case MAVLINK_MSG_ID_DIGICAM_CONFIGURE:
     {
-        camera.configure_msg(msg);
         break;
     }
 
     case MAVLINK_MSG_ID_DIGICAM_CONTROL:
     {
         camera.control_msg(msg);
+        log_picture();
         break;
     }
 #endif // CAMERA == ENABLED
@@ -1193,6 +1207,11 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
     case MAVLINK_MSG_ID_SERIAL_CONTROL:
         handle_serial_control(msg, gps);
         break;
+
+    case MAVLINK_MSG_ID_GPS_INJECT_DATA:
+        handle_gps_inject(msg, gps);
+        break;
+        
 #endif
 
     case MAVLINK_MSG_ID_AUTOPILOT_VERSION_REQUEST:

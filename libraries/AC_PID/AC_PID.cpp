@@ -64,7 +64,6 @@ void AC_PID::set_dt(float dt)
 {
     // set dt and calculate the input filter alpha
     _dt = dt;
-    calc_filt_alpha();
 }
 
 // filt_hz - set input filter hz
@@ -74,9 +73,6 @@ void AC_PID::filt_hz(float hz)
 
     // sanity check _filt_hz
     _filt_hz = max(_filt_hz, AC_PID_FILT_HZ_MIN);
-
-    // calculate the input filter alpha
-    calc_filt_alpha();
 }
 
 // set_input_filter_all - set input to PID controller
@@ -84,6 +80,11 @@ void AC_PID::filt_hz(float hz)
 //  this should be called before any other calls to get_p, get_i or get_d
 void AC_PID::set_input_filter_all(float input)
 {
+    // don't process inf or NaN
+    if (!isfinite(input)) {
+        return;
+    }
+
     // reset input filter to value received
     if (_flags._reset_filter) {
         _flags._reset_filter = false;
@@ -92,7 +93,7 @@ void AC_PID::set_input_filter_all(float input)
     }
 
     // update filter and calculate derivative
-    float input_filt_change = _filt_alpha * (input - _input);
+    float input_filt_change = get_filt_alpha() * (input - _input);
     _input = _input + input_filt_change;
     if (_dt > 0.0f) {
         _derivative = input_filt_change / _dt;
@@ -104,6 +105,11 @@ void AC_PID::set_input_filter_all(float input)
 //  this should be called before any other calls to get_p, get_i or get_d
 void AC_PID::set_input_filter_d(float input)
 {
+    // don't process inf or NaN
+    if (!isfinite(input)) {
+        return;
+    }
+
     // reset input filter to value received
     if (_flags._reset_filter) {
         _flags._reset_filter = false;
@@ -113,7 +119,7 @@ void AC_PID::set_input_filter_d(float input)
     // update filter and calculate derivative
     if (_dt > 0.0f) {
         float derivative = (input - _input) / _dt;
-        _derivative = _derivative + _filt_alpha * (derivative-_derivative);
+        _derivative = _derivative + get_filt_alpha() * (derivative-_derivative);
     }
 
     _input = input;
@@ -149,12 +155,10 @@ float AC_PID::get_pi()
     return get_p() + get_i();
 }
 
-
 float AC_PID::get_pid()
 {
     return get_p() + get_i() + get_d();
 }
-
 
 void AC_PID::reset_I()
 {
@@ -169,9 +173,6 @@ void AC_PID::load_gains()
     _imax.load();
     _imax = fabs(_imax);
     _filt_hz.load();
-
-    // calculate the input filter alpha
-    calc_filt_alpha();
 }
 
 // save_gains - save gains to eeprom
@@ -193,14 +194,16 @@ void AC_PID::operator() (float p, float i, float d, float imaxval, float input_f
     _imax = fabs(imaxval);
     _filt_hz = input_filt_hz;
     _dt = dt;
-    // calculate the input filter alpha
-    calc_filt_alpha();
 }
 
 // calc_filt_alpha - recalculate the input filter alpha
-void AC_PID::calc_filt_alpha()
+float AC_PID::get_filt_alpha() const
 {
+    if (_filt_hz == 0.0f) {
+        return 1.0f;
+    }
+
     // calculate alpha
     float rc = 1/(2*PI*_filt_hz);
-    _filt_alpha = _dt / (_dt + rc);
+    return _dt / (_dt + rc);
 }

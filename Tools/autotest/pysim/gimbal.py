@@ -5,14 +5,6 @@ import util, time, math
 from math import degrees, radians, cos, sin, tan
 from rotmat import Vector3, Matrix3
 
-def constrain(value, minv, maxv):
-    '''constrain a value to a range'''
-    if value < minv:
-        value = minv
-    if value > maxv:
-        value = maxv
-    return value
-
 class Gimbal3Axis(object):
     '''a gimbal simulation'''
     def __init__(self, vehicle):
@@ -154,9 +146,9 @@ class Gimbal3Axis(object):
         #print("gimbalJointRates ", gimbalJointRates)
 
         # 6) Apply the rate limits from 4)
-        gimbalJointRates.x = constrain(gimbalJointRates.x, lowerRatelimit.x, upperRatelimit.x)
-        gimbalJointRates.y = constrain(gimbalJointRates.y, lowerRatelimit.y, upperRatelimit.y)
-        gimbalJointRates.z = constrain(gimbalJointRates.z, lowerRatelimit.z, upperRatelimit.z)
+        gimbalJointRates.x = util.constrain(gimbalJointRates.x, lowerRatelimit.x, upperRatelimit.x)
+        gimbalJointRates.y = util.constrain(gimbalJointRates.y, lowerRatelimit.y, upperRatelimit.y)
+        gimbalJointRates.z = util.constrain(gimbalJointRates.z, lowerRatelimit.z, upperRatelimit.z)
 
         # 7) Convert the modified gimbal joint rates to body rates (still copter
         # relative)
@@ -239,9 +231,8 @@ class Gimbal3Axis(object):
                 self.demanded_angular_rate = Vector3(m.demanded_rate_x,
                                                      m.demanded_rate_y,
                                                      m.demanded_rate_z)
-                self.supplied_gyro_bias = Vector3(m.gyro_bias_x,
-                                                  m.gyro_bias_y,
-                                                  m.gyro_bias_z)
+                # no longer supply a bias
+                self.supplied_gyro_bias = Vector3()
                 self.seen_gimbal_control = True
             if m.get_type() == 'HEARTBEAT' and not self.seen_heartbeat:
                 self.seen_heartbeat = True

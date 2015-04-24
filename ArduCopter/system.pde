@@ -129,14 +129,14 @@ static void init_ardupilot()
     check_usb_mux();
 
     // init the GCS connected to the console
-    gcs[0].setup_uart(serial_manager, AP_SerialManager::SerialProtocol_Console);
+    gcs[0].setup_uart(serial_manager, AP_SerialManager::SerialProtocol_Console, 0);
 
     // init telemetry port
-    gcs[1].setup_uart(serial_manager, AP_SerialManager::SerialProtocol_MAVLink1);
+    gcs[1].setup_uart(serial_manager, AP_SerialManager::SerialProtocol_MAVLink, 0);
 
 #if MAVLINK_COMM_NUM_BUFFERS > 2
     // setup serial port for telem2
-    gcs[2].setup_uart(serial_manager, AP_SerialManager::SerialProtocol_MAVLink2);
+    gcs[2].setup_uart(serial_manager, AP_SerialManager::SerialProtocol_MAVLink, 1);
 #endif
 
 #if FRSKY_TELEM_ENABLED == ENABLED
@@ -257,6 +257,9 @@ static void init_ardupilot()
     // mid-flight, so set the serial ports non-blocking once we are
     // ready to fly
     serial_manager.set_blocking_writes_all(false);
+
+    // enable CPU failsafe
+    failsafe_enable();
 
     cliSerial->print_P(PSTR("\nReady to FLY "));
 
@@ -383,12 +386,12 @@ static void check_usb_mux(void)
 
 // frsky_telemetry_send - sends telemetry data using frsky telemetry
 //  should be called at 5Hz by scheduler
+#if FRSKY_TELEM_ENABLED == ENABLED
 static void frsky_telemetry_send(void)
 {
-#if FRSKY_TELEM_ENABLED == ENABLED
     frsky_telemetry.send_frames((uint8_t)control_mode);
-#endif
 }
+#endif
 
 /*
   should we log a message type now?

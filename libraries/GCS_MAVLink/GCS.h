@@ -57,6 +57,7 @@ enum ap_message {
     MSG_OPTICAL_FLOW,
     MSG_GIMBAL_REPORT,
     MSG_EKF_STATUS_REPORT,
+    MSG_LOCAL_POSITION,
     MSG_RETRY_DEFERRED // this must be last
 };
 
@@ -71,7 +72,7 @@ public:
     GCS_MAVLINK();
     void        update(void (*run_cli)(AP_HAL::UARTDriver *));
     void        init(AP_HAL::UARTDriver *port, mavlink_channel_t mav_chan);
-    void        setup_uart(const AP_SerialManager& serial_manager, AP_SerialManager::SerialProtocol protocol);
+    void        setup_uart(const AP_SerialManager& serial_manager, AP_SerialManager::SerialProtocol protocol, uint8_t instance);
     void        send_message(enum ap_message id);
     void        send_text(gcs_severity severity, const char *str);
     void        send_text_P(gcs_severity severity, const prog_char_t *str);
@@ -135,6 +136,7 @@ public:
     void send_opticalflow(AP_AHRS_NavEKF &ahrs, const OpticalFlow &optflow);
 #endif
     void send_autopilot_version(void) const;
+    void send_local_position(const AP_AHRS &ahrs) const;
 
     // return a bitmap of active channels. Used by libraries to loop
     // over active channels to send to all active channels    
@@ -146,6 +148,12 @@ public:
       any library
     */
     static void send_statustext_all(const prog_char_t *msg);
+
+    /*
+      send a MAVLink message to all components with this vehicle's system id
+      This is a no-op if no routes to components have been learned
+    */
+    static void send_to_components(const mavlink_message_t* msg) { routing.send_to_components(msg); }
 
 private:
     void        handleMessage(mavlink_message_t * msg);
@@ -288,6 +296,8 @@ private:
     void lock_channel(mavlink_channel_t chan, bool lock);
     void handle_set_mode(mavlink_message_t* msg, bool (*set_mode)(uint8_t mode));
     void handle_gimbal_report(AP_Mount &mount, mavlink_message_t *msg) const;
+
+    void handle_gps_inject(const mavlink_message_t *msg, AP_GPS &gps);
 
     // return true if this channel has hardware flow control
     bool have_flow_control(void);

@@ -1,6 +1,6 @@
 /// -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
 
-#define THISFIRMWARE "ArduCopter V3.3-dev"
+#define THISFIRMWARE "APM:Copter V3.3-dev"
 /*
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -264,9 +264,16 @@ static Compass compass;
 
 AP_InertialSensor ins;
 
+////////////////////////////////////////////////////////////////////////////////
+// SONAR
+#if CONFIG_SONAR == ENABLED
+static RangeFinder sonar;
+static bool sonar_enabled = true; // enable user switch for sonar
+#endif
+
 // Inertial Navigation EKF
 #if AP_AHRS_NAVEKF_AVAILABLE
-AP_AHRS_NavEKF ahrs(ins, barometer, gps);
+AP_AHRS_NavEKF ahrs(ins, barometer, gps, sonar);
 #else
 AP_AHRS_DCM ahrs(ins, barometer, gps);
 #endif
@@ -300,13 +307,6 @@ static float ekfNavVelGainScaler;
 static AP_SerialManager serial_manager;
 static const uint8_t num_gcs = MAVLINK_COMM_NUM_BUFFERS;
 static GCS_MAVLINK gcs[MAVLINK_COMM_NUM_BUFFERS];
-
-////////////////////////////////////////////////////////////////////////////////
-// SONAR
-#if CONFIG_SONAR == ENABLED
-static RangeFinder sonar;
-static bool sonar_enabled = true; // enable user switch for sonar
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 // User variables
@@ -537,11 +537,11 @@ static AP_Frsky_Telem frsky_telemetry(ahrs, battery);
 static int16_t climb_rate;
 // The altitude as reported by Sonar in cm - Values are 20 to 700 generally.
 static int16_t sonar_alt;
-static uint8_t sonar_alt_health;   // true if we can trust the altitude from the sonar
+static uint8_t sonar_alt_health;    // true if we can trust the altitude from the sonar
 static float target_sonar_alt;      // desired altitude in cm above the ground
 static int32_t baro_alt;            // barometer altitude in cm above home
 static float baro_climbrate;        // barometer climbrate in cm/s
-
+static LowPassFilterVector3f land_accel_ef_filter(LAND_DETECTOR_ACCEL_LPF_CUTOFF); // accelerations for land detector test
 
 ////////////////////////////////////////////////////////////////////////////////
 // 3D Location vectors
@@ -650,7 +650,7 @@ static AP_Mount camera_mount(ahrs, current_loc);
 // AC_Fence library to reduce fly-aways
 ////////////////////////////////////////////////////////////////////////////////
 #if AC_FENCE == ENABLED
-AC_Fence    fence(&inertial_nav);
+AC_Fence    fence(inertial_nav);
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -704,7 +704,6 @@ static bool pre_arm_checks(bool display_failure);
 // setup the var_info table
 AP_Param param_loader(var_info);
 
-#if MAIN_LOOP_RATE == 400
 /*
   scheduler table for fast CPUs - all regular tasks apart from the fast_loop()
   should be listed here, along with how often they should be called
@@ -746,7 +745,7 @@ static const AP_Scheduler::Task scheduler_tasks[] PROGMEM = {
     { ekf_check,            40,      2 },
     { crash_check,          40,      2 },
     { landinggear_update,   40,      1 },
-    { gcs_check_input,	     8,    550 },
+    { gcs_check_input,       1,    550 },
     { gcs_send_heartbeat,  400,    150 },
     { gcs_send_deferred,     8,    720 },
     { gcs_data_stream_send,  8,    950 },
@@ -756,6 +755,7 @@ static const AP_Scheduler::Task scheduler_tasks[] PROGMEM = {
     { update_mount,          8,     45 },
     { ten_hz_logging_loop,  40,     30 },
     { fifty_hz_logging_loop, 8,     22 },
+    { full_rate_logging_loop,1,     22 },
     { perf_update,        4000,     20 },
     { read_receiver_rssi,   40,      5 },
 #if FRSKY_TELEM_ENABLED == ENABLED
@@ -780,80 +780,6 @@ static const AP_Scheduler::Task scheduler_tasks[] PROGMEM = {
     { userhook_SuperSlowLoop,400,   10 },
 #endif
 };
-#else
-/*
-  scheduler table - all regular tasks apart from the fast_loop()
-  should be listed here, along with how often they should be called
-  (in 10ms units) and the maximum time they are expected to take (in
-  microseconds)
-  1    = 100hz
-  2    = 50hz
-  4    = 25hz
-  10   = 10hz
-  20   = 5hz
-  33   = 3hz
-  50   = 2hz
-  100  = 1hz
-  1000 = 0.1hz
- */
-static const AP_Scheduler::Task scheduler_tasks[] PROGMEM = {
-    { rc_loop,               1,     100 },
-    { throttle_loop,         2,     450 },
-    { update_GPS,            2,     900 },
-#if OPTFLOW == ENABLED
-    { update_optical_flow,   1,     100 },
-#endif
-    { update_batt_compass,  10,     720 },
-    { read_aux_switches,    10,      50 },
-    { arm_motors_check,     10,      10 },
-    { auto_trim,            10,     140 },
-    { update_altitude,      10,    1000 },
-    { run_nav_updates,       4,     800 },
-    { update_thr_average,    1,      50 },
-    { three_hz_loop,        33,      90 },
-    { compass_accumulate,    2,     420 },
-    { barometer_accumulate,  2,     250 },
-#if FRAME_CONFIG == HELI_FRAME
-    { check_dynamic_flight,  2,     100 },
-#endif
-    { update_notify,         2,     100 },
-    { one_hz_loop,         100,     420 },
-    { ekf_check,            10,      20 },
-    { crash_check,          10,      20 },
-    { landinggear_update,   10,      10 },
-    { gcs_check_input,	     2,     550 },
-    { gcs_send_heartbeat,  100,     150 },
-    { gcs_send_deferred,     2,     720 },
-    { gcs_data_stream_send,  2,     950 },
-    { update_mount,          2,     450 },
-    { ten_hz_logging_loop,  10,     300 },
-    { fifty_hz_logging_loop, 2,     220 },
-    { perf_update,        1000,     200 },
-    { read_receiver_rssi,   10,      50 },
-#if FRSKY_TELEM_ENABLED == ENABLED
-    { frsky_telemetry_send, 20,     100 },
-#endif
-#if EPM_ENABLED == ENABLED
-    { epm_update,           10,      20 },
-#endif
-#ifdef USERHOOK_FASTLOOP
-    { userhook_FastLoop,     1,    100  },
-#endif
-#ifdef USERHOOK_50HZLOOP
-    { userhook_50Hz,         2,    100  },
-#endif
-#ifdef USERHOOK_MEDIUMLOOP
-    { userhook_MediumLoop,   10,    100 },
-#endif
-#ifdef USERHOOK_SLOWLOOP
-    { userhook_SlowLoop,     30,    100 },
-#endif
-#ifdef USERHOOK_SUPERSLOWLOOP
-    { userhook_SuperSlowLoop,100,   100 },
-#endif
-};
-#endif
-
 
 void setup() 
 {
@@ -919,7 +845,7 @@ void loop()
     perf_info_check_loop_time(timer - fast_loopTimer);
 
     // used by PI Loops
-    G_Dt                    = (float)(timer - fast_loopTimer) / 1000000.f;
+    G_Dt                    = (float)(timer - fast_loopTimer) / 1000000.0f;
     fast_loopTimer          = timer;
 
     // for mainloop failure monitoring
@@ -966,6 +892,12 @@ static void fast_loop()
 
     // run the attitude controllers
     update_flight_mode();
+
+    // update home from EKF if necessary
+    update_home_from_EKF();
+
+    // check if we've landed
+    update_land_detector();
 }
 
 // rc_loops - reads user input from transmitter/receiver
@@ -984,9 +916,6 @@ static void throttle_loop()
 {
     // get altitude and climb rate from inertial lib
     read_inertial_altitude();
-
-    // check if we've landed
-    update_land_detector();
 
     // update throttle_low_comp value (controls priority of throttle vs attitude control)
     update_throttle_low_comp();
@@ -1039,7 +968,8 @@ static void update_batt_compass(void)
 // should be run at 10hz
 static void ten_hz_logging_loop()
 {
-    if (should_log(MASK_LOG_ATTITUDE_MED)) {
+    // log attitude data if we're not already logging at the higher rate
+    if (should_log(MASK_LOG_ATTITUDE_MED) && !should_log(MASK_LOG_ATTITUDE_FAST)) {
         Log_Write_Attitude();
         Log_Write_Rate();
     }
@@ -1072,10 +1002,20 @@ static void fifty_hz_logging_loop()
         Log_Write_Rate();
     }
 
-    if (should_log(MASK_LOG_IMU)) {
+    // log IMU data if we're not already logging at the higher rate
+    if (should_log(MASK_LOG_IMU) && !should_log(MASK_LOG_IMU_FAST)) {
         DataFlash.Log_Write_IMU(ins);
     }
 #endif
+}
+
+// full_rate_logging_loop
+// should be run at the MAIN_LOOP_RATE
+static void full_rate_logging_loop()
+{
+    if (should_log(MASK_LOG_IMU_FAST)) {
+        DataFlash.Log_Write_IMU(ins);
+    }
 }
 
 // three_hz_loop - 3.3hz loop
@@ -1145,12 +1085,8 @@ static void one_hz_loop()
 #endif
 #endif
 
-#if AC_FENCE == ENABLED
-    // set fence altitude limit in position controller
-    if ((fence.get_enabled_fences() & AC_FENCE_TYPE_ALT_MAX) != 0) {
-        pos_control.set_alt_max(pv_alt_above_origin(fence.get_safe_alt()*100.0f));
-    }
-#endif
+    // update position controller alt limits
+    update_poscon_alt_max();
 }
 
 // called at 50hz
@@ -1178,12 +1114,6 @@ static void update_GPS(void)
     if (gps_updated) {
         // set system time if necessary
         set_system_time_from_GPS();
-
-        // update home from GPS location if necessary
-        update_home_from_GPS();
-
-        // check gps base position (used for RTK only)
-        check_gps_base_pos();
 
         // checks to initialise home and take location based pictures
         if (gps.status() >= AP_GPS::GPS_OK_FIX_3D) {

@@ -6,23 +6,7 @@
 // table of user settable parameters
 const AP_Param::GroupInfo AC_AttitudeControl_Heli::var_info[] PROGMEM = {
 
-    // @Param: RATE_RP_MAX
-    // @DisplayName: Angle Rate Roll-Pitch max
-    // @Description: maximum rotation rate in roll/pitch axis requested by angle controller used in stabilize, loiter, rtl, auto flight modes
-    // @Units: Centi-Degrees/Sec
-    // @Range: 9000 36000
-    // @Increment: 500
-    // @User: Advanced
-    AP_GROUPINFO("RATE_RP_MAX", 0, AC_AttitudeControl_Heli, _angle_rate_rp_max, AC_ATTITUDE_CONTROL_RATE_RP_MAX_DEFAULT),
-
-    // @Param: RATE_Y_MAX
-    // @DisplayName: Angle Rate Yaw max
-    // @Description: maximum rotation rate in roll/pitch axis requested by angle controller used in stabilize, loiter, rtl, auto flight modes
-    // @Units: Centi-Degrees/Sec
-    // @Range: 4500 18000
-    // @Increment: 500
-    // @User: Advanced
-    AP_GROUPINFO("RATE_Y_MAX",  1, AC_AttitudeControl_Heli, _angle_rate_y_max, AC_ATTITUDE_CONTROL_RATE_Y_MAX_DEFAULT),
+    // 0, 1 were RATE_RP_MAX, RATE_Y_MAX
 
     // @Param: SLEW_YAW
     // @DisplayName: Yaw target slew rate
@@ -218,8 +202,8 @@ void AC_AttitudeControl_Heli::rate_bf_to_motor_roll_pitch(float rate_roll_target
         }
     }
     
-    roll_ff = roll_feedforward_filter.apply(((AC_HELI_PID&)_pid_rate_roll).get_ff(rate_roll_target_cds));
-    pitch_ff = pitch_feedforward_filter.apply(((AC_HELI_PID&)_pid_rate_pitch).get_ff(rate_pitch_target_cds));
+    roll_ff = roll_feedforward_filter.apply(((AC_HELI_PID&)_pid_rate_roll).get_ff(rate_roll_target_cds), _dt);
+    pitch_ff = pitch_feedforward_filter.apply(((AC_HELI_PID&)_pid_rate_pitch).get_ff(rate_pitch_target_cds), _dt);
 
     // add feed forward and final output
     roll_out = roll_pd + roll_i + roll_ff;
@@ -356,7 +340,7 @@ float AC_AttitudeControl_Heli::rate_bf_to_motor_yaw(float rate_target_cds)
         }
     }
     
-    ff = yaw_feedforward_filter.apply(((AC_HELI_PID&)_pid_rate_yaw).get_ff(rate_target_cds));
+    ff = yaw_feedforward_filter.apply(((AC_HELI_PID&)_pid_rate_yaw).get_ff(rate_target_cds), _dt);
     
     // add feed forward
     yaw_out = pd + i + ff;
@@ -377,20 +361,11 @@ float AC_AttitudeControl_Heli::rate_bf_to_motor_yaw(float rate_target_cds)
 // throttle functions
 //
 
-// get_angle_boost - returns a throttle including compensation for roll/pitch angle
+// returns a throttle including compensation for roll/pitch angle
 // throttle value should be 0 ~ 1000
-int16_t AC_AttitudeControl_Heli::get_angle_boost(int16_t throttle_pwm)
+float AC_AttitudeControl_Heli::get_boosted_throttle(float throttle_in)
 {
     // no angle boost for trad helis
     _angle_boost = 0;
-    return throttle_pwm;
+    return throttle_in;
 }
-
-// update_feedforward_filter_rate - Sets LPF cutoff frequency
-void AC_AttitudeControl_Heli::update_feedforward_filter_rates(float time_step)
-{
-    pitch_feedforward_filter.set_cutoff_frequency(time_step, AC_ATTITUDE_HELI_RATE_FF_FILTER);
-    roll_feedforward_filter.set_cutoff_frequency(time_step, AC_ATTITUDE_HELI_RATE_FF_FILTER);
-    yaw_feedforward_filter.set_cutoff_frequency(time_step, AC_ATTITUDE_HELI_RATE_FF_FILTER);
-}
-

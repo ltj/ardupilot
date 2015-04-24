@@ -103,7 +103,7 @@ static void init_ardupilot()
     barometer.init();
 
 	// init the GCS
-    gcs[0].setup_uart(serial_manager, AP_SerialManager::SerialProtocol_Console);
+    gcs[0].setup_uart(serial_manager, AP_SerialManager::SerialProtocol_Console, 0);
 
     // we start by assuming USB connected, as we initialed the serial
     // port with SERIAL0_BAUD. check_usb_mux() fixes this if need be.    
@@ -111,11 +111,11 @@ static void init_ardupilot()
     check_usb_mux();
 
     // setup serial port for telem1
-    gcs[1].setup_uart(serial_manager, AP_SerialManager::SerialProtocol_MAVLink1);
+    gcs[1].setup_uart(serial_manager, AP_SerialManager::SerialProtocol_MAVLink, 0);
 
 #if MAVLINK_COMM_NUM_BUFFERS > 2
     // setup serial port for telem2
-    gcs[2].setup_uart(serial_manager, AP_SerialManager::SerialProtocol_MAVLink2);
+    gcs[2].setup_uart(serial_manager, AP_SerialManager::SerialProtocol_MAVLink, 1);
 #endif
 
     // setup frsky telemetry
@@ -424,9 +424,9 @@ static void check_usb_mux(void)
     // SERIAL0_BAUD, but when connected as a TTL serial port we run it
     // at SERIAL1_BAUD.
     if (usb_connected) {
-        serial_manager.set_console_baud(AP_SerialManager::SerialProtocol_Console);
+        serial_manager.set_console_baud(AP_SerialManager::SerialProtocol_Console, 0);
     } else {
-        serial_manager.set_console_baud(AP_SerialManager::SerialProtocol_MAVLink1);
+        serial_manager.set_console_baud(AP_SerialManager::SerialProtocol_MAVLink, 0);
     }
 #endif
 }
@@ -500,9 +500,9 @@ static bool should_log(uint32_t mask)
 /*
   send FrSky telemetry. Should be called at 5Hz by scheduler
  */
-static void telemetry_send(void)
-{
 #if FRSKY_TELEM_ENABLED == ENABLED
+static void frsky_telemetry_send(void)
+{
     frsky_telemetry.send_frames((uint8_t)control_mode);
-#endif
 }
+#endif
