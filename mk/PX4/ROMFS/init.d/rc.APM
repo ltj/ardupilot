@@ -307,6 +307,12 @@ else
     fi
 fi
 
+# Teensysense board
+if teensysense start
+then
+    echo "Found teensysense"
+fi
+
 # optional ETS airspeed sensor
 if ets_airspeed start
 then

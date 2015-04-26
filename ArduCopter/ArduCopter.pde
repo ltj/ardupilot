@@ -146,6 +146,7 @@
 #include <AP_BattMonitor.h>     // Battery monitor library
 #include <AP_BoardConfig.h>     // board configuration library
 #include <AP_Frsky_Telem.h>
+#include <AP_Teensysense.h>
 #if SPRAYER == ENABLED
 #include <AC_Sprayer.h>         // crop sprayer library
 #endif
@@ -292,6 +293,9 @@ AP_ADC_ADS7844 apm1_adc;
 #endif
 
 AP_InertialSensor ins;
+
+// Teensysense object
+static AP_Teensysense teensy;
 
 // Inertial Navigation EKF
 #if AP_AHRS_NAVEKF_AVAILABLE

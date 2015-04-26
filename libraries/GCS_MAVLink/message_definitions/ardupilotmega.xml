@@ -444,5 +444,25 @@
       <field type="int16_t" name="current_battery">Battery current, in 10*milliamperes (1 = 10 milliampere), -1: autopilot does not measure the current</field>
     </message>
 
+    <message name="INT_SENSOR" id="200">
+        <description>Onboard sensor message.</description>
+        <field type="int32_t" name="value">measured value</field>
+        <field type="char[16]" name="description">Description</field>
+        <field type="uint64_t" name="time_usec">Unix epoch time</field>
+        <field type="int32_t" name="altitude">Altitude</field>
+        <field type="int32_t" name="longitude">Longitude</field>
+        <field type="int32_t" name="latitude">Latitude</field>
+    </message>
+
+    <message name="FLOAT_SENSOR" id="201">
+        <description>Onboard sensor message.</description>
+        <field type="float" name="value">measured value</field>
+        <field type="char[16]" name="description">Description</field>
+        <field type="uint64_t" name="time_usec">Unix epoch time</field>
+        <field type="int32_t" name="altitude">Altitude</field>
+        <field type="int32_t" name="longitude">Longitude</field>
+        <field type="int32_t" name="latitude">Latitude</field>
+    </message>
+
      </messages>
 </mavlink>
